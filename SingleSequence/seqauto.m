@@ -1,4 +1,4 @@
-function [CPS_t, raw_SD_t, raw_N_t, raw_intTime_t, bcorr_t, bcorr_SD_t, Ca43r_t, Ca43r_SD_t, STGcorr_t, STGcorr_SD_t] = seqauto(path)
+function [CPS_t, raw_SD_t, raw_N_t, raw_intTime_t, bcorr_t, bcorr_SD_t, Ca43r_t, Ca43r_SD_t, STGcorr_t, STGcorr_SD_t, STGTErows] = seqauto(path)
 
 Batchlogloc=fullfile(path,'BatchLog.csv');
 
@@ -153,15 +153,14 @@ bcorr_SD=bcorr;
 secs=seconds(elapse);
 for j=1:numel(secs)
     [val, idx]=sort(blkrows_ol-j, 'ComparisonMethod', 'abs');
-    %If there are not two STGTE bracketing the sample then just use the
-    %closest single BLK as a point correction.
-    
+    %If there are not two blks bracketing the sample then just use the
+    %closest single BLK as a point correction.    
     bcorr(j,:)=CPS_t{j,Elements}-CPS_t{blkrows_ol(idx(1)),Elements};
     bcorr_SD(j,:)=(realSD_t{j,Elements}.^2+realSD_t{blkrows_ol(idx(1)),Elements}.^2).^0.5;
     %Otherwise use linear regression
     if ~all(val>=0) && ~all(val<=0)
         uidx=blkrows_ol(idx(find(val>0, 1)));
-        lidx=blkrows_ol(idx(find(val<0, 1)));
+        lidx=blkrows_ol(idx(find(val<=0, 1)));
         c=CPS_t{lidx, Elements};
         m=(CPS_t{uidx, Elements}-c)./(secs(uidx)-secs(lidx));
         bcorr(j,:)=CPS_t{j,Elements}-(m.*(secs(j)-secs(lidx))+c);
@@ -202,13 +201,12 @@ if ~all(contains(lower(Ca43r_t.Sample(STGTErows)), '0.5stgte'))
     STGTErows(contains(lower(Ca43r_t.Sample(STGTErows)), '0.5stgte'))=[];
 end
 
-%Remove samples/standards that have anomalously low counts
 Ca43r_stg=Ca43r_t{:,STGTE_elements};
 Ca43r_RSDstg=Ca43r_RSD_t{:,STGTE_elements};
 
 %remove anomalously low counts (blockages or exhaustion of sample)
-Ca43r_stg(bcorr_t{:,STGTE_elements}<bmean_t{:,STGTE_elements}*3 | Ca43r_stg<0)=nan;
-Ca43r_RSDstg(isnan(Ca43r_stg))=nan;
+%Ca43r_stg(bcorr_t{:,STGTE_elements}<bmean_t{:,STGTE_elements}*3 | Ca43r_stg<0)=nan;
+%Ca43r_RSDstg(isnan(Ca43r_stg))=nan;
 
 %pre-allocate tables for computational efficiency
 STGcorr=zeros(size(Ca43r_stg));
@@ -222,7 +220,6 @@ for j=1:numel(secs)
     STGcorr(j,:)=Ca43r_stg(j,:)./Ca43r_stg(STGTErows(idx(1)),:).*STGTE_values;
     STGcorr_RSD(j,:)=(Ca43r_RSDstg(j,:).^2+Ca43r_RSDstg(STGTErows(idx(1)),:).^2).^0.5;
     
-
     %Otherwise use linear regression
     if ~all(val>=0) && ~all(val<=0)
         uidx=STGTErows(idx(find(val>0, 1)));
