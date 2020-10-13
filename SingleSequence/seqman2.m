@@ -99,13 +99,13 @@ Ca43r_SD_t=cell2table([info,num2cell(Ca43r_RSD.*Ca43r)],'VariableNames', ['RunNa
 %    STGTErows(contains(lower(Ca43r_t.Sample(STGTErows)), '0.5stgte'))=[];
 %end
 
-%Remove samples/standards that have anomalously low counts
+
 Ca43r_stg=Ca43r_t{:,STGTE_elements};
 Ca43r_RSDstg=Ca43r_RSD_t{:,STGTE_elements};
 
 %remove anomalously low counts (blockages or exhaustion of sample)
-Ca43r_stg(bcorr_t{:,STGTE_elements}<bmean_t{:,STGTE_elements}*3 | Ca43r_stg<0)=nan;
-Ca43r_RSDstg(isnan(Ca43r_stg))=nan;
+%Ca43r_stg(bcorr_t{:,STGTE_elements}<bmean_t{:,STGTE_elements}*3 | Ca43r_stg<0)=nan;
+%Ca43r_RSDstg(isnan(Ca43r_stg))=nan;
 
 %pre-allocate tables for computational efficiency
 STGcorr=zeros(size(Ca43r_stg));
